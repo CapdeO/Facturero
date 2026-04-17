@@ -1,0 +1,8 @@
+node_modules
+
+# Credenciales ARCA - nunca subir
+*.key
+*.crt
+*.csr
+*.pem
+.env

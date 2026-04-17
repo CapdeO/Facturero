@@ -1,0 +1,25 @@
+{
+  "name": "facturero",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CapdeO/Facturero.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CapdeO/Facturero/issues"
+  },
+  "homepage": "https://github.com/CapdeO/Facturero#readme",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "node-forge": "^1.4.0",
+    "soap": "^1.9.1"
+  }
+}
