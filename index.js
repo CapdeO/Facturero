@@ -158,61 +158,65 @@ async function listarFacturas() {
     });
     const f = res.FECompConsultarResult.ResultGet;
     facturas.push(f);
-    console.log(`
-  Factura:           ${f.PtoVta}-${String(f.CbteDesde).padStart(8,'0')}
-  Fecha emisión:     ${f.CbteFch}
-  Período desde:     ${f.FchServDesde}
-  Período hasta:     ${f.FchServHasta}
-  Venc. pago:        ${f.FchVtoPago}
-  Importe total:     $${f.ImpTotal}
-  Importe neto:      $${f.ImpNeto}
-  IVA:               $${f.ImpIVA}
-  Doc. receptor:     tipo ${f.DocTipo} / nro ${f.DocNro}
-  Concepto:          ${f.Concepto === 1 ? 'Productos' : f.Concepto === 2 ? 'Servicios' : 'Productos y Servicios'}
-  Moneda:            ${f.MonId} (cotiz: ${f.MonCotiz})
-  CAE:               ${f.CodAutorizacion}
-  Tipo emisión:      ${f.EmisionTipo}
-  Venc. CAE:         ${f.FchVto}
-  Fecha proceso:     ${f.FchProceso}
-  ${'─'.repeat(50)}`);
+  //   console.log(`
+  // Factura:           ${f.PtoVta}-${String(f.CbteDesde).padStart(8,'0')}
+  // Fecha emisión:     ${f.CbteFch}
+  // Período desde:     ${f.FchServDesde}
+  // Período hasta:     ${f.FchServHasta}
+  // Venc. pago:        ${f.FchVtoPago}
+  // Importe total:     $${f.ImpTotal}
+  // Importe neto:      $${f.ImpNeto}
+  // IVA:               $${f.ImpIVA}
+  // Doc. receptor:     tipo ${f.DocTipo} / nro ${f.DocNro}
+  // Concepto:          ${f.Concepto === 1 ? 'Productos' : f.Concepto === 2 ? 'Servicios' : 'Productos y Servicios'}
+  // Moneda:            ${f.MonId} (cotiz: ${f.MonCotiz})
+  // CAE:               ${f.CodAutorizacion}
+  // Tipo emisión:      ${f.EmisionTipo}
+  // Venc. CAE:         ${f.FchVto}
+  // Fecha proceso:     ${f.FchProceso}
+  // ${'─'.repeat(50)}`);
   }
 
-  // Agrupar por mes (usando fecha de emisión YYYYMMDD → clave YYYY-MM)
+  // Agrupar por mes de período de servicio (FchServDesde), no por fecha de emisión
   const porMes = {};
   for (const f of facturas) {
-    const mes = `${f.CbteFch.slice(0, 4)}-${f.CbteFch.slice(4, 6)}`;
+    const mes = `${f.FchServDesde.slice(0, 4)}-${f.FchServDesde.slice(4, 6)}`;
     if (!porMes[mes]) porMes[mes] = [];
     porMes[mes].push(f.ImpTotal);
   }
 
+  // Calcular total por mes una sola vez
+  const totalesMensuales = Object.entries(porMes)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([mes, importes]) => ({ mes, total: importes.reduce((a, b) => a + b, 0), cantidad: importes.length }));
+
   console.log(`\n${'═'.repeat(50)}`);
-  console.log('  PROMEDIOS POR MES');
+  console.log('  TOTAL POR MES');
   console.log(`${'═'.repeat(50)}`);
-  for (const [mes, importes] of Object.entries(porMes).sort()) {
-    const total = importes.reduce((a, b) => a + b, 0);
-    const promedio = total / importes.length;
-    console.log(`  ${mes}   facturas: ${importes.length}   total: $${total.toLocaleString('es-AR')}   promedio: $${promedio.toLocaleString('es-AR', { maximumFractionDigits: 2 })}`);
+  for (const { mes, total, cantidad } of totalesMensuales) {
+    console.log(`  ${mes}   facturas: ${cantidad}   total: $${total.toLocaleString('es-AR')}`);
   }
 
-  const todosImportes = facturas.map(f => f.ImpTotal);
-  const totalGeneral  = todosImportes.reduce((a, b) => a + b, 0);
-  const promedioTotal = totalGeneral / todosImportes.length;
+  const totalGeneral  = totalesMensuales.reduce((a, b) => a + b.total, 0);
+  // promedio = suma de totales mensuales / cantidad de meses (no de facturas individuales)
+  const promedioMensual = totalGeneral / totalesMensuales.length;
 
   console.log(`${'═'.repeat(50)}`);
   console.log(`  TOTALES`);
-  console.log(`  Facturas emitidas:  ${facturas.length}`);
-  console.log(`  Facturado total:    $${totalGeneral.toLocaleString('es-AR')}`);
-  console.log(`  Promedio general:   $${promedioTotal.toLocaleString('es-AR', { maximumFractionDigits: 2 })}`);
+  console.log(`  Meses con actividad: ${totalesMensuales.length}`);
+  console.log(`  Facturas emitidas:   ${facturas.length}`);
+  console.log(`  Facturado total:     $${totalGeneral.toLocaleString('es-AR')}`);
+  console.log(`  Promedio mensual:    $${promedioMensual.toLocaleString('es-AR', { maximumFractionDigits: 2 })}`);
   console.log(`${'═'.repeat(50)}\n`);
 }
 
 listarFacturas().catch(console.error);
 
 // crearFacturaC({
-//   importeTotal: 10000.00,
+//   importeTotal: 1300000.00,
 //   concepto: 2,
 //   docTipo: 99,
 //   docNro: 0,
-//   fechaInicio: '2026-04-01',
-//   fechaFin:    '2026-04-30',
+//   fechaInicio: '2026-03-01',
+//   fechaFin:    '2026-03-31',
 // }).catch(console.error);
