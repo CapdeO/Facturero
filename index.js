@@ -149,12 +149,15 @@ async function listarFacturas() {
 
   if (ultimo === 0) { console.log('Sin comprobantes emitidos.'); return; }
 
+  const facturas = [];
+
   for (let nro = 1; nro <= ultimo; nro++) {
     const [res] = await client.FECompConsultarAsync({
       Auth: auth,
       FeCompConsReq: { CbteTipo: 11, CbteNro: nro, PtoVta: PTO_VTA },
     });
     const f = res.FECompConsultarResult.ResultGet;
+    facturas.push(f);
     console.log(`
   Factura:           ${f.PtoVta}-${String(f.CbteDesde).padStart(8,'0')}
   Fecha emisión:     ${f.CbteFch}
@@ -173,6 +176,34 @@ async function listarFacturas() {
   Fecha proceso:     ${f.FchProceso}
   ${'─'.repeat(50)}`);
   }
+
+  // Agrupar por mes (usando fecha de emisión YYYYMMDD → clave YYYY-MM)
+  const porMes = {};
+  for (const f of facturas) {
+    const mes = `${f.CbteFch.slice(0, 4)}-${f.CbteFch.slice(4, 6)}`;
+    if (!porMes[mes]) porMes[mes] = [];
+    porMes[mes].push(f.ImpTotal);
+  }
+
+  console.log(`\n${'═'.repeat(50)}`);
+  console.log('  PROMEDIOS POR MES');
+  console.log(`${'═'.repeat(50)}`);
+  for (const [mes, importes] of Object.entries(porMes).sort()) {
+    const total = importes.reduce((a, b) => a + b, 0);
+    const promedio = total / importes.length;
+    console.log(`  ${mes}   facturas: ${importes.length}   total: $${total.toLocaleString('es-AR')}   promedio: $${promedio.toLocaleString('es-AR', { maximumFractionDigits: 2 })}`);
+  }
+
+  const todosImportes = facturas.map(f => f.ImpTotal);
+  const totalGeneral  = todosImportes.reduce((a, b) => a + b, 0);
+  const promedioTotal = totalGeneral / todosImportes.length;
+
+  console.log(`${'═'.repeat(50)}`);
+  console.log(`  TOTALES`);
+  console.log(`  Facturas emitidas:  ${facturas.length}`);
+  console.log(`  Facturado total:    $${totalGeneral.toLocaleString('es-AR')}`);
+  console.log(`  Promedio general:   $${promedioTotal.toLocaleString('es-AR', { maximumFractionDigits: 2 })}`);
+  console.log(`${'═'.repeat(50)}\n`);
 }
 
 listarFacturas().catch(console.error);
